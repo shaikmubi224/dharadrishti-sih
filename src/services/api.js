@@ -3,7 +3,9 @@
 
 import { delineateProbableSpringshed } from '../utils/hydroEngine';
 
-export const API_BASE_URL = 'http://localhost:8000/api';
+// Dynamically use VITE_API_URL from environment (e.g. Render URL) or default to localhost:8000
+const RAW_API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+export const API_BASE_URL = `${RAW_API_URL.replace(/\/$/, '')}/api`;
 
 /**
  * Check backend health & database status

@@ -478,10 +478,11 @@ def get_stats():
     })
 
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
     print("=" * 70)
     print("DharaDrishti Python AI/ML Backend Server (Flask + SQLite 3)")
     print("SIH Problem Statement ID: 26240 | Ministry of Tribal Affairs")
     print(f"SQLite Database Initialized at: {DB_PATH}")
-    print("Serving REST API at: http://localhost:8000/api")
+    print(f"Serving REST API on port {port}")
     print("=" * 70)
-    app.run(host="0.0.0.0", port=8000, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False)
