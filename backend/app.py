@@ -101,7 +101,27 @@ def init_db():
 # Initialize database on module load
 init_db()
 
-# --- HEALTH CHECK & SYSTEM DIAGNOSTICS ---
+# --- ROOT & HEALTH CHECK ROUTES ---
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({
+        "status": "online",
+        "system": "DharaDrishti Python AI Geospatial Engine (Backend API)",
+        "version": "1.2.0",
+        "sihProblemId": "26240",
+        "ministry": "Ministry of Tribal Affairs, Govt of India",
+        "message": "Backend API is running live. Connect your Vercel frontend using VITE_API_URL.",
+        "endpoints": {
+            "health": "/api/health",
+            "login": "/api/auth/login",
+            "delineate": "/api/springs/delineate",
+            "surveys": "/api/surveys",
+            "workOrders": "/api/work-orders",
+            "stats": "/api/stats"
+        },
+        "timestamp": datetime.datetime.now().isoformat()
+    })
+
 @app.route("/api/health", methods=["GET"])
 def health_check():
     conn = get_db()
