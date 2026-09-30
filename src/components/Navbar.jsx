@@ -22,7 +22,8 @@ export default function Navbar({
   onLogout,
   onOpenSurvey,
   isDarkMode,
-  onToggleTheme
+  onToggleTheme,
+  backendOnline = false
 }) {
   return (
     <header style={{
@@ -137,6 +138,32 @@ export default function Navbar({
 
       {/* Right: Role, Field Survey, Theme & Auth */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Backend Engine Status Pill */}
+        <div 
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '5px 10px',
+            borderRadius: '20px',
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            background: backendOnline ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+            border: backendOnline ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+            color: backendOnline ? '#34d399' : '#fbbf24'
+          }}
+          title={backendOnline ? "Connected to Python/Flask AI & SQLite Database (Port 8000)" : "In-Browser Client Hydro Engine Active (Offline Resilient)"}
+        >
+          <span style={{
+            width: '7px',
+            height: '7px',
+            borderRadius: '50%',
+            background: backendOnline ? '#10b981' : '#f59e0b',
+            boxShadow: backendOnline ? '0 0 8px #10b981' : 'none'
+          }} />
+          <span>{backendOnline ? 'AI Backend: Port 8000' : 'Local Hydro Engine'}</span>
+        </div>
+
         {/* Field Survey Trigger */}
         <button 
           onClick={onOpenSurvey}
@@ -184,6 +211,17 @@ export default function Navbar({
             </div>
           </div>
         </div>
+
+        {/* Sign Out Button */}
+        <button
+          onClick={onLogout}
+          className="btn-secondary"
+          style={{ padding: '6px 10px', fontSize: '0.78rem', gap: '5px' }}
+          title="Sign Out to Login Screen"
+        >
+          <LogOut size={14} color="#fb7185" />
+          <span style={{ color: '#fb7185' }}>Sign Out</span>
+        </button>
 
         {/* Theme Toggle */}
         <button 

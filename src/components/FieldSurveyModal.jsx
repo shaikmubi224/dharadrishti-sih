@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Camera, MapPin, Droplets, CheckCircle, Upload, Navigation, Sparkles } from 'lucide-react';
+import { sendSurveyToBackend } from '../services/api';
 
 export default function FieldSurveyModal({ springs, onClose, onSubmitSurvey }) {
   const [selectedSpringId, setSelectedSpringId] = useState(springs[0]?.id || '');
@@ -9,21 +10,31 @@ export default function FieldSurveyModal({ springs, onClose, onSubmitSurvey }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoSelected, setPhotoSelected] = useState(true);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      onSubmitSurvey({
-        springId: selectedSpringId,
-        measuredDischarge: parseFloat(discharge),
-        waterQuality,
-        communityFeedback: notes || 'Flow rate measured at bucket test outlet by Gram Panchayat team.',
-        date: new Date().toISOString().split('T')[0]
-      });
-      setIsSubmitting(false);
-      onClose();
-    }, 600);
+    const surveyPayload = {
+      springId: selectedSpringId,
+      measuredDischarge: parseFloat(discharge),
+      waterQuality,
+      communityFeedback: notes || 'Flow rate measured at bucket test outlet by Gram Panchayat team.',
+      date: new Date().toISOString().split('T')[0]
+    };
+
+    try {
+      const backendRes = await sendSurveyToBackend(surveyPayload);
+      if (backendRes && backendRes.record) {
+        surveyPayload.id = backendRes.record.id;
+        surveyPayload.syncedToDb = true;
+      }
+    } catch (err) {
+      console.warn("Backend survey sync exception, storing in local state:", err);
+    }
+
+    onSubmitSurvey(surveyPayload);
+    setIsSubmitting(false);
+    onClose();
   };
 
   return (

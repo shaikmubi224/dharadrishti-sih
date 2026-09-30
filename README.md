@@ -101,7 +101,8 @@ Identifying the subterranean **Springshed (Recharge Zone)** and selecting techni
 * **Frontend Framework:** React 19 + Vite 8
 * **Styling & Design System:** Modern Vanilla CSS Design Tokens (Dark-mode glassmorphism, responsive drawer, glowing map markers)
 * **GIS & Mapping Engine:** Leaflet & React-Leaflet with Esri Satellite, CartoDB Dark Matter, and OpenStreetMap tiles
-* **Geospatial Simulation Engine:** In-browser hydrogeological calculator (AHP, Darcy infiltration, Rational runoff formula)
+* **Backend API & AI Engine:** Python Flask (port 8000) with SQLite 3 persistent storage, NumPy hydrogeological modeling, and CORS support
+* **Geospatial Simulation Engine:** Hybrid Python / In-browser hydrogeological calculator (AHP Multi-Criteria, Darcy infiltration, slope guardrails)
 * **Icons & Visuals:** Lucide React
 * **Confetti & Micro-interactions:** Canvas Confetti
 
@@ -111,6 +112,7 @@ Identifying the subterranean **Springshed (Recharge Zone)** and selecting techni
 
 ### Prerequisites
 * **Node.js** (v18 or higher recommended; tested on v24)
+* **Python** (v3.8 or higher; tested on Python 3.10)
 * **npm** (v9 or higher)
 * **Git**
 
@@ -122,12 +124,24 @@ Identifying the subterranean **Springshed (Recharge Zone)** and selecting techni
    cd sih-hackathon
    ```
 
-2. **Install dependencies:**
+2. **Install frontend dependencies:**
    ```bash
    npm install
    ```
 
-3. **Start the local development server:**
+3. **Install Python backend dependencies:**
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
+
+4. **Start the Python AI/SQLite Backend (Port 8000):**
+   ```bash
+   npm run backend
+   # Or: python backend/app.py
+   ```
+   *Runs Flask REST API and initializes `backend/dharadrishti.db` with seeded government profiles.*
+
+5. **Start the Vite Frontend (Port 5173):**
    ```bash
    npm run dev
    ```
@@ -136,7 +150,7 @@ Identifying the subterranean **Springshed (Recharge Zone)** and selecting techni
    http://localhost:5173/
    ```
 
-4. **Build for production:**
+6. **Build for production:**
    ```bash
    npm run build
    ```

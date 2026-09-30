@@ -7,22 +7,62 @@ import RevivalSimulatorModal from './components/RevivalSimulatorModal';
 import DprModal from './components/DprModal';
 import FieldSurveyModal from './components/FieldSurveyModal';
 import LoginModal from './components/LoginModal';
+import LoginPage from './components/LoginPage';
 import { SPRINGS_DATABASE, TRIBAL_REGIONS, DISTRICT_STATISTICS } from './data/springsData';
-import { delineateProbableSpringshed } from './utils/hydroEngine';
-import { Sparkles, CheckCircle2 } from 'lucide-react';
+import { 
+  checkBackendHealth, 
+  delineateSpringshedBackend, 
+  approveWorkOrderBackend, 
+  fetchSurveysBackend 
+} from './services/api';
+import { Sparkles } from 'lucide-react';
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [springs, setSprings] = useState(SPRINGS_DATABASE);
   const [selectedRegion, setSelectedRegion] = useState('all');
   const [selectedSpring, setSelectedSpring] = useState(SPRINGS_DATABASE[0]);
   const [mapCenter, setMapCenter] = useState([19.9042, 84.1350]);
   const [mapZoom, setMapZoom] = useState(12);
+  const [backendOnline, setBackendOnline] = useState(false);
 
   const [currentRole, setCurrentRole] = useState({
     role: 'admin',
     name: 'Dr. Alok Verma, IAS',
-    title: 'Joint Secretary, Ministry of Tribal Affairs'
+    title: 'Joint Secretary, Ministry of Tribal Affairs',
+    email: 'admin@mota.gov.in'
   });
+
+  // Check backend health & sync SQLite surveys on mount
+  useEffect(() => {
+    checkBackendHealth().then((health) => {
+      setBackendOnline(health.online || false);
+    });
+
+    fetchSurveysBackend().then((res) => {
+      if (res && res.surveys && res.surveys.length > 0) {
+        setSprings(prev => prev.map(s => {
+          const matches = res.surveys.filter(survey => survey.spring_id === s.id);
+          if (matches.length > 0) {
+            const latest = matches[0];
+            return {
+              ...s,
+              currentDischarge: latest.measured_discharge,
+              fieldSurveys: matches.map(m => ({
+                id: m.id,
+                measuredDischarge: m.measured_discharge,
+                waterQuality: m.water_quality,
+                communityFeedback: m.community_feedback,
+                fieldOfficer: m.field_officer,
+                date: m.created_at ? m.created_at.split(' ')[0] : '2026-09-30'
+              }))
+            };
+          }
+          return s;
+        }));
+      }
+    });
+  }, []);
 
   // Modal visibility states
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -56,8 +96,9 @@ export default function App() {
   };
 
   // On-the-fly AI Springshed Delineation for arbitrary map click
-  const handleAnalyzeNewPoint = (lat, lng) => {
-    const aiResult = delineateProbableSpringshed(lat, lng);
+  const handleAnalyzeNewPoint = async (lat, lng) => {
+    showToast("Processing DEM slope, lineaments & AHP criteria...");
+    const aiResult = await delineateSpringshedBackend(lat, lng);
     
     const newSpring = {
       id: `SP-USER-${Math.floor(100 + Math.random() * 900)}`,
@@ -90,11 +131,18 @@ export default function App() {
     setMapCenter([lat, lng]);
     setMapZoom(13.8);
 
-    showToast(`AI Delineation Complete: Springshed Catchment (${newSpring.springshedAreaKm2} km²) Mapped!`);
+    showToast(`AI Delineation Complete: Springshed Catchment (${newSpring.springshedAreaKm2} km²) Mapped via ${aiResult.source || 'AI Engine'}!`);
   };
 
   // Sanction Project Handler
   const handleApproveProject = (springId) => {
+    // Notify backend
+    approveWorkOrderBackend(springId, {
+      approvedBy: currentRole.name,
+      sanctionedBudget: 325000,
+      laborDays: 340
+    });
+
     setSprings(prev => prev.map(s => {
       if (s.id === springId) {
         return {
@@ -112,7 +160,7 @@ export default function App() {
       }));
     }
 
-    showToast("Work Order Approved under MGNREGA & PM-JANMAN Scheme!");
+    showToast("Work Order Approved & Synced under MGNREGA & PM-JANMAN Scheme!");
   };
 
   // Field Survey Submission Handler (Ground Truth Feedback Loop)
@@ -138,7 +186,10 @@ export default function App() {
       }));
     }
 
-    showToast("Field Log Synced: AI Hydrogeological Weights Recalibrated with Ground Truth!");
+    showToast(surveyData.syncedToDb
+      ? "Field Log Synced to SQLite: AI Hydrogeological Weights Recalibrated with Ground Truth!"
+      : "Field Log Recorded: AI Hydrogeological Weights Recalibrated with Ground Truth!"
+    );
   };
 
   const showToast = (msg) => {
@@ -154,6 +205,18 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', nextTheme ? 'dark' : 'light');
   };
 
+  if (!isAuthenticated) {
+    return (
+      <LoginPage 
+        onLogin={(user) => {
+          setCurrentRole(user);
+          setIsAuthenticated(true);
+          showToast(`Welcome, ${user.name} (${user.badge || user.role.toUpperCase()})!`);
+        }}
+      />
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       {/* 1. Header Navigation */}
@@ -162,10 +225,14 @@ export default function App() {
         onSelectRegion={handleSelectRegion}
         currentRole={currentRole}
         onOpenLogin={() => setIsLoginOpen(true)}
-        onLogout={() => setIsLoginOpen(true)}
+        onLogout={() => {
+          setIsAuthenticated(false);
+          showToast("Logged out successfully.");
+        }}
         onOpenSurvey={() => setIsSurveyOpen(true)}
         isDarkMode={isDarkMode}
         onToggleTheme={handleToggleTheme}
+        backendOnline={backendOnline}
       />
 
       {/* 2. Top Executive Statistics Banner */}
